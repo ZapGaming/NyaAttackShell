@@ -24,6 +24,7 @@ use sysinfo::{System, SystemExt, DiskExt, NetworkExt, CpuExt, NetworksExt};
 mod config;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct AppState {
     current_tab: usize,
     command_input: String,
@@ -47,6 +48,7 @@ struct AppState {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct OutputEntry {
     command: String,
     output: String,
@@ -55,6 +57,7 @@ struct OutputEntry {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct GitStatus {
     branch: String,
     staged: usize,
@@ -76,6 +79,7 @@ impl GitStatus {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct FileInfo {
     name: String,
     is_dir: bool,
@@ -83,6 +87,7 @@ struct FileInfo {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct SearchResult {
     path: String,
     line_num: usize,
@@ -90,6 +95,7 @@ struct SearchResult {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 enum DropdownType {
     Theme,
     AccentColor,
@@ -637,12 +643,12 @@ fn get_theme_colors(settings: &config::Settings) -> (Color, Color, Color, Color,
 fn render_system_monitor_tab(
     f: &mut ratatui::Frame,
     area: Rect,
-    state: &AppState,
+    _state: &AppState,
     pink: Color,
     purple: Color,
     cyan: Color,
     dark_bg: Color,
-    highlight: Color,
+    _highlight: Color,
 ) {
     let block = Block::default()
         .title(Line::from(vec![
@@ -667,7 +673,7 @@ fn render_system_monitor_tab(
 
     // Disk info (first disk)
     let disks = sys.disks();
-    let (disk_name, disk_total, disk_used, disk_percent) = if let Some(disk) = disks.first() {
+    let (disk_name, _disk_total, _disk_used, disk_percent) = if let Some(disk) = disks.first() {
         let total = disk.total_space() as u64;
         let used = total - disk.available_space() as u64;
         let percent = (used as f64 / total as f64) * 100.0;
@@ -678,7 +684,7 @@ fn render_system_monitor_tab(
 
     // Network info - get first network interface
     let networks = sys.networks();
-    let (net_name, net_rx, net_tx) = if let Some((name, data)) = networks.iter().next() {
+    let (_net_name, net_rx, net_tx) = if let Some((name, data)) = networks.iter().next() {
         (name.clone(), data.received() as u64, data.transmitted() as u64)
     } else {
         ("None".to_string(), 0, 0)
@@ -926,7 +932,7 @@ fn render_history_tab(
     f: &mut ratatui::Frame,
     area: Rect,
     state: &AppState,
-    pink: Color,
+    _pink: Color,
     purple: Color,
     cyan: Color,
     dark_bg: Color,
