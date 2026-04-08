@@ -42,8 +42,6 @@ struct AppState {
     history_selected: usize,
     guide_selected: usize,
     files_selected: usize,
-    attack_selected: usize,
-    attack_confirm: bool,
     editing_setting: Option<usize>,
     last_update: Instant,
 }
@@ -98,7 +96,7 @@ enum DropdownType {
     Background,
 }
 
-const ATTACK_COMMANDS: &[(&str, &str)] = &[
+const QUICK_COMMANDS: &[(&str, &str)] = &[
     ("ls -la", "List all files"),
     ("pwd", "Print working directory"),
     ("git status", "Check git status"),
@@ -201,8 +199,6 @@ fn main() -> Result<()> {
         history_selected: 0,
         guide_selected: 0,
         files_selected: 0,
-        attack_selected: 0,
-        attack_confirm: false,
         editing_setting: None,
         last_update: Instant::now(),
     };
@@ -231,9 +227,7 @@ fn main() -> Result<()> {
                 if key_event.kind == KeyEventKind::Press {
                     match key_event.code {
                         KeyCode::Esc => {
-                            if app_state.attack_confirm {
-                                app_state.attack_confirm = false;
-                            } else if app_state.dropdown_open.is_some() {
+                            if app_state.dropdown_open.is_some() {
                                 app_state.dropdown_open = None;
                             } else if app_state.editing_setting.is_some() {
                                 app_state.editing_setting = None;
@@ -244,7 +238,7 @@ fn main() -> Result<()> {
                         }
                         KeyCode::Tab => {
                             if app_state.dropdown_open.is_none() {
-                                app_state.current_tab = (app_state.current_tab + 1) % 7;
+                                app_state.current_tab = (app_state.current_tab + 1) % 6;
                             }
                         }
                         KeyCode::Enter => {
@@ -269,33 +263,6 @@ fn main() -> Result<()> {
                                     1 => app_state.dropdown_open = Some(DropdownType::AccentColor),
                                     2 => app_state.dropdown_open = Some(DropdownType::Background),
                                     _ => {}
-                                }
-                            } else if app_state.current_tab == 6 && app_state.dropdown_open.is_none() {
-                                if app_state.attack_confirm {
-                                    // Execute the attack
-                                    let _categories = ["wifi", "ble", "usb", "rf", "net", "exploit"];
-                                    let attacks = [
-                                        &["wifi_scan", "wifi_deauth", "wifi_handshake", "wifi_crack", "wifi_evil", "wifi_pmkid", "wifi_wps"][..],
-                                        &["ble_scan", "ble_jam", "ble_sniff", "ble_replay"][..],
-                                        &["usb_rubber", "usb_harvest"][..],
-                                        &["rf_scan", "rf_replay", "rf_jam"][..],
-                                        &["net_scan", "net_mitm", "net_sniff", "net_dns"][..],
-                                        &["shell", "hashcat", "hydra", "exploit"][..],
-                                    ];
-                                    let cat_idx = app_state.attack_selected.min(5);
-                                    let att_idx = app_state.attack_selected / 6;
-                                    let cmd = attacks.get(cat_idx).and_then(|a| a.get(att_idx.min(a.len()-1))).unwrap_or(&"help");
-                                    app_state.command_history.push(cmd.to_string());
-                                    let (output, success) = execute_command(cmd, &app_state.current_dir);
-                                    app_state.output_history.push(OutputEntry {
-                                        command: format!("⚔️ ATTACK: {}", cmd),
-                                        output,
-                                        success,
-                                        timestamp: Instant::now(),
-                                    });
-                                    app_state.attack_confirm = false;
-                                } else {
-                                    app_state.attack_confirm = true;
                                 }
                             } else if !app_state.command_input.is_empty() && app_state.dropdown_open.is_none() {
                                 let cmd = app_state.command_input.clone();
@@ -325,13 +292,7 @@ fn main() -> Result<()> {
                             }
                         }
                         KeyCode::Up => {
-                            if app_state.attack_confirm {
-                                app_state.attack_confirm = false;
-                            } else if app_state.current_tab == 6 {
-                                if app_state.attack_selected > 0 {
-                                    app_state.attack_selected -= 1;
-                                }
-                            } else if let Some(dropdown) = &mut app_state.dropdown_open {
+                            if let Some(dropdown) = &mut app_state.dropdown_open {
                                 match dropdown {
                                     DropdownType::Theme => {
                                         app_state.selected_setting = (app_state.selected_setting + THEMES.len() - 1) % THEMES.len()
@@ -372,11 +333,7 @@ fn main() -> Result<()> {
                             }
                         }
                         KeyCode::Down => {
-                            if app_state.attack_confirm {
-                                // keep closed
-                            } else if app_state.current_tab == 6 {
-                                app_state.attack_selected += 1;
-                            } else if let Some(dropdown) = &mut app_state.dropdown_open {
+                            if let Some(dropdown) = &mut app_state.dropdown_open {
                                 match dropdown {
                                     DropdownType::Theme => {
                                         app_state.selected_setting = (app_state.selected_setting + 1) % THEMES.len()
@@ -680,12 +637,12 @@ fn get_theme_colors(settings: &config::Settings) -> (Color, Color, Color, Color,
 fn render_system_monitor_tab(
     f: &mut ratatui::Frame,
     area: Rect,
-    _state: &AppState,
+    state: &AppState,
     pink: Color,
     purple: Color,
     cyan: Color,
     dark_bg: Color,
-    _highlight: Color,
+    highlight: Color,
 ) {
     let block = Block::default()
         .title(Line::from(vec![
@@ -710,7 +667,7 @@ fn render_system_monitor_tab(
 
     // Disk info (first disk)
     let disks = sys.disks();
-    let (disk_name, _disk_total, _disk_used, disk_percent) = if let Some(disk) = disks.first() {
+    let (disk_name, disk_total, disk_used, disk_percent) = if let Some(disk) = disks.first() {
         let total = disk.total_space() as u64;
         let used = total - disk.available_space() as u64;
         let percent = (used as f64 / total as f64) * 100.0;
@@ -721,7 +678,7 @@ fn render_system_monitor_tab(
 
     // Network info - get first network interface
     let networks = sys.networks();
-    let (_net_name, net_rx, net_tx) = if let Some((name, data)) = networks.iter().next() {
+    let (net_name, net_rx, net_tx) = if let Some((name, data)) = networks.iter().next() {
         (name.clone(), data.received() as u64, data.transmitted() as u64)
     } else {
         ("None".to_string(), 0, 0)
@@ -855,7 +812,6 @@ fn render_header(
         Line::from(vec![Span::styled("📁 Files", Style::default().fg(if state.current_tab == 3 { pink } else { cyan }))]),
         Line::from(vec![Span::styled("⚙️ Settings", Style::default().fg(if state.current_tab == 4 { pink } else { cyan }))]),
         Line::from(vec![Span::styled("📊 System Monitor", Style::default().fg(if state.current_tab == 5 { pink } else { cyan }))]),
-        Line::from(vec![Span::styled("⚔️ Attacks", Style::default().fg(if state.current_tab == 6 { pink } else { cyan }))]),
     ])
     .select(state.current_tab)
     .style(Style::default().fg(cyan))
@@ -888,7 +844,6 @@ fn render_content(
         3 => render_files_tab(f, area, state, pink, purple, cyan, dark_bg, highlight),
         4 => render_settings_tab(f, area, state, pink, purple, cyan, dark_bg, highlight),
         5 => render_system_monitor_tab(f, area, state, pink, purple, cyan, dark_bg, highlight),
-        6 => render_attack_tab(f, area, state, pink, purple, cyan, dark_bg, highlight),
         _ => {}
     }
 }
@@ -917,7 +872,7 @@ fn render_commands_tab(
         .style(Style::default().bg(dark_bg))
         .border_style(Style::default().fg(purple));
 
-    let command_items: Vec<ListItem> = ATTACK_COMMANDS
+    let command_items: Vec<ListItem> = QUICK_COMMANDS
         .iter()
         .map(|(cmd, desc)| {
             ListItem::new(Line::from(vec![
@@ -971,7 +926,7 @@ fn render_history_tab(
     f: &mut ratatui::Frame,
     area: Rect,
     state: &AppState,
-    _pink: Color,
+    pink: Color,
     purple: Color,
     cyan: Color,
     dark_bg: Color,
@@ -1391,120 +1346,3 @@ fn format_file_size(size: u64) -> String {
     }
 }
 
-
-fn render_attack_tab(
-    f: &mut ratatui::Frame,
-    area: Rect,
-    state: &AppState,
-    pink: Color,
-    purple: Color,
-    cyan: Color,
-    dark_bg: Color,
-    highlight: Color,
-) {
-    let categories = ["WiFi", "BLE", "USB", "RF", "Network", "Exploit"];
-    let attacks_by_cat = [
-        vec!["wifi_scan:Discover networks", "wifi_deauth:Kick devices", "wifi_handshake:Capture keys", "wifi_crack:Crack password", "wifi_evil:Evil twin AP", "wifi_pmkid:Get PMKID", "wifi_wps:Brute WPS"],
-        vec!["ble_scan:Find BLE devices", "ble_jam:Block BLE", "ble_sniff:Capture BLE", "ble_replay:Replay packets"],
-        vec!["usb_rubber:HID attack", "usb_harvest:Get passwords"],
-        vec!["rf_scan:Spectrum", "rf_replay:Replay signal", "rf_jam:Jam RF"],
-        vec!["net_scan:Ports", "net_mitm:MITM attack", "net_sniff:Packets", "net_dns:DNS spoof"],
-        vec!["shell:Reverse shell", "hashcat:Crack hashes", "hydra:Brute force", "exploit:Run exploit"],
-    ];
-    
-    let selected_category = state.attack_selected.min(5);
-    let items = &attacks_by_cat[selected_category];
-    
-    // Left panel - categories
-    let left_width = 20u16;
-    let right_width = area.width.saturating_sub(left_width + 2);
-    
-    // Category list
-    let cat_items: Vec<ListItem> = categories.iter().enumerate().map(|(i, cat)| {
-        let is_selected = i == selected_category;
-        let style = if is_selected {
-            Style::default().bg(highlight).fg(Color::White)
-        } else {
-            Style::default().fg(cyan)
-        };
-        ListItem::new(Line::from(Span::styled(*cat, style)))
-    }).collect();
-    
-    let cat_block = Block::default()
-        .title(Line::from(vec![Span::styled("⚔️ ", Style::default().fg(pink)), Span::styled("ATTACKS", Style::default().fg(cyan).add_modifier(ratatui::style::Modifier::BOLD))]))
-        .borders(Borders::ALL)
-        .style(Style::default().bg(dark_bg))
-        .border_style(Style::default().fg(purple));
-    
-    let cat_list = List::new(cat_items).block(cat_block).highlight_style(Style::default().bg(highlight).fg(Color::White)).highlight_symbol("▶ ");
-    
-    let cat_area = Rect { x: area.x, y: area.y, width: left_width, height: area.height };
-    f.render_widget(cat_list, cat_area);
-    
-    // Right panel - attacks in category
-    let attack_items: Vec<ListItem> = items.iter().enumerate().map(|(i, item)| {
-        let parts: Vec<&str> = item.split(':').collect();
-        let cmd = parts[0];
-        let desc = if parts.len() > 1 { parts[1] } else { "" };
-        let is_selected = i == state.attack_selected % items.len();
-        let style = if is_selected {
-            Style::default().bg(highlight).fg(Color::White)
-        } else {
-            Style::default().fg(cyan)
-        };
-        ListItem::new(Line::from(vec![
-            Span::styled(cmd, style),
-            Span::raw(" - "),
-            Span::styled(desc, Style::default().fg(Color::Gray)),
-        ]))
-    }).collect();
-    
-    let attack_block = Block::default()
-        .title(Line::from(vec![Span::styled(categories[selected_category], Style::default().fg(cyan).add_modifier(ratatui::style::Modifier::BOLD))]))
-        .borders(Borders::ALL)
-        .style(Style::default().bg(dark_bg))
-        .border_style(Style::default().fg(purple));
-    
-    let attack_list = List::new(attack_items).block(attack_block).highlight_style(Style::default().bg(highlight).fg(Color::White)).highlight_symbol("▶ ");
-    
-    let attack_area = Rect { x: area.x + left_width + 1, y: area.y, width: right_width, height: area.height };
-    f.render_widget(attack_list, attack_area);
-    
-    // Confirmation popup when confirm is open
-    if state.attack_confirm {
-        let popup_width = 50u16;
-        let popup_height = 15u16;
-        let popup_x = (area.width - popup_width) / 2 + area.x;
-        let popup_y = (area.height - popup_height) / 2 + area.y;
-        
-        let popup_area = Rect { x: popup_x, y: popup_y, width: popup_width, height: popup_height };
-        
-        let selected_item = items.get(state.attack_selected % items.len()).map(|s| s.split(':').collect::<Vec<_>>()).unwrap_or_default();
-        let cmd_name: &str = selected_item.first().cloned().unwrap_or("unknown");
-        let cmd_desc: &str = selected_item.get(1).cloned().unwrap_or("");
-        
-        let popup_block = Block::default()
-            .title(Line::from(vec![Span::styled("⚠️ CONFIRM ATTACK", Style::default().fg(Color::Red).add_modifier(ratatui::style::Modifier::BOLD))]))
-            .borders(Borders::ALL)
-            .style(Style::default().bg(Color::Rgb(20, 10, 10)))
-            .border_style(Style::default().fg(Color::Red));
-        
-        f.render_widget(popup_block, popup_area);
-        
-        let text = vec![
-            Line::from(Span::raw("")),
-            Line::from(vec![Span::styled("Command: ", Style::default().fg(Color::Gray)), Span::raw(&cmd_name[..]).style(Style::default().fg(Color::Red))]),
-            Line::from(Span::raw("")),
-            Line::from(vec![Span::styled("Description: ", Style::default().fg(Color::Gray)), Span::raw(&cmd_desc[..]).style(Style::default().fg(cyan))]),
-            Line::from(Span::raw("")),
-            Line::from(Span::styled("⚠️ Security testing tool only!", Style::default().fg(Color::Yellow))),
-            Line::from(Span::styled("⚠️ Use in authorized lab only!", Style::default().fg(Color::Yellow))),
-            Line::from(Span::raw("")),
-            Line::from(vec![Span::styled("[ENTER] Execute   [ESC] Cancel", Style::default().fg(Color::Green))]),
-        ];
-        
-        let para = Paragraph::new(text).style(Style::default().bg(dark_bg)).centered();
-        let inner_area = Rect { x: popup_x + 1, y: popup_y + 1, width: popup_width - 2, height: popup_height - 2 };
-        f.render_widget(para, inner_area);
-    }
-}
