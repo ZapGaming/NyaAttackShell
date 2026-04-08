@@ -8,11 +8,11 @@
 [![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 [![Terminal](https://img.shields.io/badge/Terminal-4D4D4D?style=for-the-badge&logo=gnome-terminal&logoColor=white)](https://github.com/microsoft/terminal)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
-[![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg?style=for-the-badge)](https://github.com/ZapGaming/nyashell/actions)
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg?style=for-the-badge)](https://github.com/ZapGaming/nyashell/releases)
+[![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg?style=for-the-badge)](https://github.com/ZapGaming/NyaAttackShell/actions)
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg?style=for-the-badge)](https://github.com/ZapGaming/NyaAttackShell/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6?style=for-the-badge)](https://www.microsoft.com/windows)
-[![Size](https://img.shields.io/badge/Size-~1.5_MB-ff6b9d?style=for-the-badge)](https://github.com/ZapGaming/nyashell/releases/download/v1.0.0/nyashell.exe)
-[![Downloads](https://img.shields.io/github/downloads/ZapGaming/nyashell/total?color=00ffff&label=Downloads&style=for-the-badge)](https://github.com/ZapGaming/nyashell/releases)
+[![Size](https://img.shields.io/badge/Size-~1.5_MB-ff6b9d?style=for-the-badge)](https://github.com/ZapGaming/NyaAttackShell/releases/download/v1.0.0/nyashell.exe)
+[![Downloads](https://img.shields.io/github/downloads/ZapGaming/NyaAttackShell/total?color=00ffff&label=Downloads&style=for-the-badge)](https://github.com/ZapGaming/NyaAttackShell/releases)
 
 <img src="assets/badge.svg" alt="NyaShell Badge" style="vertical-align: middle; margin: 10px;"/>
 
