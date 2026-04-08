@@ -1116,16 +1116,15 @@ fn render_header(
     };
     f.render_widget(Paragraph::new(dir_info), dir_area);
 
-    let tabs = Tabs::new(vec![
-        Line::from(vec![Span::styled("⚡ Commands", Style::default().fg(if state.current_tab == 0 { pink } else { cyan }))]),
-        Line::from(vec![Span::styled("📜 History", Style::default().fg(if state.current_tab == 1 { pink } else { cyan }))]),
-        Line::from(vec![Span::styled("🔍 Command Guide", Style::default().fg(if state.current_tab == 2 { pink } else { cyan }))]),
-        Line::from(vec![Span::styled("📁 Files", Style::default().fg(if state.current_tab == 3 { pink } else { cyan }))]),
-        Line::from(vec![Span::styled("⚙️ Settings", Style::default().fg(if state.current_tab == 4 { pink } else { cyan }))])),
-        Line::from(vec![Span::styled("⚔️ Attacks", Style::default().fg(if state.current_tab == 6 { pink } else { cyan }))])),
-        Line::from(vec![Span::styled("📊 System Monitor", Style::default().fg(if state.current_tab == 5 { pink } else { cyan }))]),
-    ])
-    .select(state.current_tab)
+        let tabs = Tabs::new(vec![
+            Line::from(vec![Span::styled("⚡ Commands", Style::default().fg(if state.current_tab == 0 { pink } else { cyan }))]),
+            Line::from(vec![Span::styled("📜 History", Style::default().fg(if state.current_tab == 1 { pink } else { cyan }))]),
+            Line::from(vec![Span::styled("🔍 Command Guide", Style::default().fg(if state.current_tab == 2 { pink } else { cyan }))]),
+            Line::from(vec![Span::styled("📁 Files", Style::default().fg(if state.current_tab == 3 { pink } else { cyan }))]),
+            Line::from(vec![Span::styled("⚙️ Settings", Style::default().fg(if state.current_tab == 4 { pink } else { cyan }))]),
+            Line::from(vec![Span::styled("📊 System Monitor", Style::default().fg(if state.current_tab == 5 { pink } else { cyan }))]),
+            Line::from(vec![Span::styled("⚔️ Attacks", Style::default().fg(if state.current_tab == 6 { pink } else { cyan }))]),
+        ])
     .style(Style::default().fg(cyan))
     .highlight_style(Style::default().fg(pink).add_modifier(ratatui::style::Modifier::BOLD))
     .divider(Span::raw("│"));
