@@ -818,6 +818,7 @@ fn render_header(
         Line::from(vec![Span::styled("📁 Files", Style::default().fg(if state.current_tab == 3 { pink } else { cyan }))]),
         Line::from(vec![Span::styled("⚙️ Settings", Style::default().fg(if state.current_tab == 4 { pink } else { cyan }))]),
         Line::from(vec![Span::styled("📊 System Monitor", Style::default().fg(if state.current_tab == 5 { pink } else { cyan }))]),
+        Line::from(vec![Span::styled("⚔️ Attacks", Style::default().fg(if state.current_tab == 6 { pink } else { cyan }))]),
     ])
     .select(state.current_tab)
     .style(Style::default().fg(cyan))
@@ -849,6 +850,7 @@ fn render_content(
         2 => render_guide_tab(f, area, state, pink, purple, cyan, dark_bg, highlight),
         3 => render_files_tab(f, area, state, pink, purple, cyan, dark_bg, highlight),
         4 => render_settings_tab(f, area, state, pink, purple, cyan, dark_bg, highlight),
+        6 => render_attacks_tab(f, area, state, pink, purple, cyan, dark_bg, highlight),
         5 => render_system_monitor_tab(f, area, state, pink, purple, cyan, dark_bg, highlight),
         _ => {}
     }
@@ -1352,3 +1354,42 @@ fn format_file_size(size: u64) -> String {
     }
 }
 
+
+fn render_attacks_tab(
+    f: &mut ratatui::Frame,
+    area: Rect,
+    _state: &AppState,
+    pink: Color,
+    purple: Color,
+    cyan: Color,
+    dark_bg: Color,
+    _highlight: Color,
+) {
+    let block = Block::default()
+        .title(Line::from(vec![
+            Span::styled("⚔️ ", Style::default().fg(pink)),
+            Span::styled("Attack Suite", Style::default().fg(cyan).add_modifier(ratatui::style::Modifier::BOLD)),
+        ]))
+        .borders(Borders::ALL)
+        .style(Style::default().bg(dark_bg))
+        .border_style(Style::default().fg(purple));
+
+    use std::fmt::Write;
+    let mut text = String::new();
+    let cats = [("WIFI", vec!["scan","deauth","handshake","crack","eviltwin","pmkid"]),
+                ("BLE", vec!["scan","jam","inject","sniff","mitm","replay"]),
+                ("USB", vec!["ducky","harvest","shell","death","kick"]),
+                ("RF", vec!["scan","replay","jam","glitch","record"]),
+                ("NET", vec!["scan","mitm","dos","dns","arp","sslstrip"])];
+    for (cat, cmds) in cats.iter() {
+        writeln!(text, "[{}]", cat).ok();
+        for c in cmds { writeln!(text, "  {}", c).ok(); }
+        writeln!(text, "").ok();
+    }
+
+    let content = Paragraph::new(Line::from(vec![Span::raw(text)]))
+        .style(Style::default().bg(dark_bg));
+
+    f.render_widget(block, area);
+    f.render_widget(content, area);
+}
